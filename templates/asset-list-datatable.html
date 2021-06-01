@@ -1,0 +1,85 @@
+{% extends 'datatable-base.html' %}
+{%  block table_content %}
+
+<thead>
+        <tr>
+            <th>Details</th>
+            <th>Related Findings</th>
+            <th>{{ context_info.asset_type }}-ID</th>
+            <th>{{ context_info.asset_type }}-NAME</th>
+            <th>TO-ORGANISATION</th>
+        </tr>
+        <tr id="searchTR{{ context_info.asset_type }}">
+            <th>View Details</th>
+            <th>View Related Findings</th>
+            <th>{{ context_info.asset_type }}-ID</th>
+            <th>{{ context_info.asset_type }}-NAME</th>
+            <th>TO-ORGANISATION</th>
+        </tr>
+    </thead>
+    <tfoot>
+        <tr>
+            <th>Details</th>
+            <th>Related Findings</th>
+            <th>{{ context_info.asset_type }}-ID</th>
+            <th>{{ context_info.asset_type }}-NAME</th>
+            <th>TO-ORGANISATION</th>
+
+        </tr>
+    </tfoot>
+    <tbody>
+
+        {% for asset_object in object_list %}
+            <tr>
+
+                <td>
+                    <a href="{% url 'asset-update' context_info.to_organisation_url context_info.asset_type asset_object.id %}" class="btn btn-primary">View Details</a>
+                </td>
+                <td>
+                    <a href="{% url 'finding-asset-list' context_info.to_organisation_url context_info.asset_type asset_object.id %}" class="btn btn-primary">View Related Findings</a>
+                </td>
+
+                <td> {{ asset_object.asset_id_human }} </td>
+                <td> {{ asset_object.name }} </td>
+                <td>{{ asset_object.to_organisation }}</td>
+
+            </tr>
+
+        {% endfor %}
+
+    </tbody>
+    <script>
+
+        $(document).ready(function() {
+            // Setup - add a text input to each footer cell
+            $("#searchTR{{ context_info.asset_type }} th").each( function () {
+                var title = $(this).text();
+                if (title.includes("View") == false){
+                    $(this).html( '<input type="text" placeholder="Search ' + title + '" />' );
+                    //$(this).html( '<input type="text" placeholder="Search" />' );
+                }
+                else{
+                    $(this).html("");
+                }
+
+            } );
+
+            // DataTable
+            var table = $('#dataTable').DataTable();
+
+            // Apply the search
+            table.columns().every( function () {
+                var that = this;
+
+                $( 'input', this.header() ).on( 'keyup change clear', function () {
+                    if ( that.search() !== this.value ) {
+                        that
+                            .search( this.value )
+                            .draw();
+                    }
+                } );
+            } );
+        } );
+    </script>
+
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'template-base.html' %}
+    {% block content %}
+        <div class="container-fluid">
+            <h1 class="mt-4">Dashboard</h1>
+            <ol class="breadcrumb mb-4">
+                <li class="breadcrumb-item active">Dashboard</li>
+            </ol>
+            <div class="container">
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="main-card mb-3 card">
+                            <div class="card-body">
+                                {% with prefix='barChart' chart_title='Monthly' %}
+                                    {% include 'month_create_date_findings_bar_chart.html' %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                        <div class="main-card mb-3 card">
+                            <div class="card-body">
+                                {% with prefix='lineChart' chart_title='MonthlyOpen' %}
+                                    {% include 'monthly_open_findings.html' %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="main-card mb-3 card">
+                            <div class="card-body">
+                                {% with prefix='actual' chart_title='Status' %}
+                                    {% include 'status_findings_pie_chart.html' %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                        <div class="main-card mb-3 card">
+                            <div class="card-body">
+                                {% with prefix='lineChart' chart_title='MonthlyClosed' %}
+                                    {% include 'monthly_closed_findings_lineChart.html' %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="container" style="margin-top: 100px;">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card">
+                            <div class="card-header">
+                                <i class="fas fa-table mr-1"></i>
+                                    Finding Overdue Dates
+                            </div>
+                            <div class="card-body">
+                                {% with prefix='Calendar' chart_title='Overdue' finding_list=to_organisation_findings %}
+                                    {% include 'full_calendar.html' %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endblock %}

@@ -1,0 +1,101 @@
+<table class="table table-hover table-striped table-responsive" id="dataTable{{ finding_type }}" width="100%" cellspacing="0">
+    <thead>
+        <tr role="row">
+            <th>View</th>
+            <th>ID</th>
+            <th>SHORT_DESCRIPTION</th>
+            <th>{{ context_info.asset_type}}-ID</th>
+            <th>{{ context_info.asset_type}}_NAME</th>
+            <th>TO-ORGANISATION</th>
+            <th>STATUS</th>
+            <th>SEVERITY</th>
+            <th>CREATE_DATE<br> (YYYY-MM-DD)</th>
+            <th>DUE_DATE<br> (YYYY-MM-DD)</th>
+
+
+        </tr>
+        <tr id="searchTR{{ finding_type }}">
+            <th>View</th>
+            <th>ID</th>
+            <th>SHORT_DESCRIPTION</th>
+            <th>{{ context_info.asset_type}}-ID</th>
+            <th>{{ context_info.asset_type}}_NAME</th>
+            <th>TO-ORGANISATION</th>
+            <th>STATUS</th>
+            <th>SEVERITY</th>
+            <th>CREATE_DATE</th>
+            <th>DUE_DATE</th>
+
+        </tr>
+    </thead>
+    <tfoot>
+        <tr>
+            <th>View</th>
+            <th>ID</th>
+            <th>SHORT_DESCRIPTION</th>
+            <th>{{ context_info.asset_type}}-ID</th>
+            <th>{{ context_info.asset_type}}_NAME</th>
+            <th>TO-ORGANISATION</th>
+            <th>STATUS</th>
+            <th>SEVERITY</th>
+            <th>CREATE_DATE<br> (YYYY-MM-DD)</th>
+            <th>DUE_DATE<br> (YYYY-MM-DD)</th>
+
+        </tr>
+    </tfoot>
+    <tbody>
+
+        {% for finding_object in finding_list %}
+
+            <tr>
+                <td>
+                    <a href="{% url 'finding-update' context_info.to_organisation_url finding_type finding_object.id %}" class="btn btn-primary">View</a>
+                </td>
+                <td>{{ finding_object.id }}</td>
+                <td>{{ finding_object.short_description }}</td>
+                <td>{{ finding_object.get_asset_object.asset_id_human }}</td>
+                <td>{{ finding_object.get_asset_object.name }}</td>
+                <td>{{ finding_object.get_asset_object.to_organisation.to_organisation_name }}</td>
+                <td>{{ finding_object.status.status_name }}</td>
+                <td>{{ finding_object.severity.severity_name }}</td>
+                <td>{{ finding_object.create_date|date:"Y-m-d" }}</td>
+                <td>{{ finding_object.overdue_date|date:"Y-m-d" }}</td>
+
+
+            </tr>
+
+        {% endfor %}
+    </tbody>
+</table>
+    <script>
+
+        $(document).ready(function() {
+            // Setup - add a text input to each footer cell
+            $("#searchTR{{ finding_type }} th").each( function () {
+                var title = $(this).text();
+                if (title.includes("View") == false){
+                    $(this).html( '<input type="text" placeholder="Search ' + title + '" />' );
+                }
+                else{
+                    $(this).html("");
+                }
+
+            } );
+
+            // DataTable
+            var table = $('#dataTable{{ finding_type }}').DataTable();
+
+            // Apply the search
+            table.columns().every( function () {
+                var that = this;
+
+                $( 'input', this.header() ).on( 'keyup change clear', function () {
+                    if ( that.search() !== this.value ) {
+                        that
+                            .search( this.value, true )
+                            .draw();
+                    }
+                } );
+            } );
+        } );
+    </script>

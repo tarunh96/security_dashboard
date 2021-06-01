@@ -1,0 +1,139 @@
+<div class="col-md-12">
+    <div id="{{ prefix }}_{{ chart_title }}_lineChartCanvas">
+        <canvas id="{{ prefix }}_{{ chart_title }}" width="800" height="400"></canvas><br>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="col-md-auto">
+                <button name='update' value="Update" class="btn btn-success" id="{{ prefix }}_{{ chart_title }}_update">Update</button>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="row">
+                <div>
+                    <div>
+                        <div><label>From: </label> </div>
+                        <input type="date" id="{{ prefix }}_{{ chart_title }}_from">
+                    </div>
+
+                </div>
+                <div style="margin-left: 10px">
+                    <div>
+                        <div><label>To: </label> </div>
+                        <input type="date" id="{{ prefix }}_{{ chart_title }}_to">
+                    </div>
+
+                    {% if boolean_last_day_of_month %}
+                        <script>
+                            $('#{{ prefix }}_{{ chart_title }}_to').change(function() {
+                                var date = new Date($(this).val());
+                                var lastDay_of_month = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+                                var day = ("0" + lastDay_of_month.getDate()).slice(-2);
+                                var month = ("0" + (lastDay_of_month.getMonth() + 1)).slice(-2);
+
+                                $(this).val(lastDay_of_month.getFullYear()+"-"+(month)+"-"+(day))
+                                console.log(lastDay_of_month)
+                            });
+
+                            $('#{{ prefix }}_{{ chart_title }}_from').change(function() {
+                                var date = new Date($(this).val());
+                                var lastDay_of_month = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+                                var day = ("0" + lastDay_of_month.getDate()).slice(-2);
+                                var month = ("0" + (lastDay_of_month.getMonth() + 1)).slice(-2);
+
+                                $(this).val(lastDay_of_month.getFullYear()+"-"+(month)+"-"+(day))
+                                console.log(lastDay_of_month)
+                            });
+                        </script>
+                    {% endif %}
+                    <script type="application/javascript">
+
+                        // this function will return the date of the last day of the month of the given input_date
+                        function last_day_of_month_in_string(input_date) {
+                            var date = new Date(input_date);
+                            var lastDay_of_month = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+                            var day = ("0" + lastDay_of_month.getDate()).slice(-2);
+                            var month = ("0" + (lastDay_of_month.getMonth() + 1)).slice(-2);
+
+                            return lastDay_of_month.getFullYear()+"-"+(month)+"-"+(day)
+
+                        }
+
+                        // we set create from to first day of the year
+                        $('#{{ prefix }}_{{ chart_title }}_from').val(new Date().getFullYear() + "-01-01")
+
+                        // we set TO: to actual date
+                        var now = new Date();
+                        var day = ("0" + now.getDate()).slice(-2);
+                        var month = ("0" + (now.getMonth() + 1)).slice(-2);
+
+                        var today = now.getFullYear()+"-"+(month)+"-"+(day) ;
+                        $('#{{ prefix }}_{{ chart_title }}_to').val(today);
+
+                        // if our chart wants everything to be last day of month
+                        {% if boolean_last_day_of_month %}
+                            // set from to last day of first month of year
+                            $('#{{ prefix }}_{{ chart_title }}_from').val(new Date().getFullYear() + "-01-31")
+                            // set to to last day of current month
+                            var now_date = $('#{{ prefix }}_{{ chart_title }}_to').val()
+                            $('#{{ prefix }}_{{ chart_title }}_to').val(last_day_of_month_in_string(now_date));
+
+                            //set on change functions to mandatory last day of month
+                            $('#{{ prefix }}_{{ chart_title }}_to').change(function() {
+                                var date = new Date($(this).val());
+                                var lastDay_of_month = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+                                var day = ("0" + lastDay_of_month.getDate()).slice(-2);
+                                var month = ("0" + (lastDay_of_month.getMonth() + 1)).slice(-2);
+
+                                $(this).val(lastDay_of_month.getFullYear()+"-"+(month)+"-"+(day))
+                                console.log(lastDay_of_month)
+                            });
+
+                            $('#{{ prefix }}_{{ chart_title }}_from').change(function() {
+                                var date = new Date($(this).val());
+                                var lastDay_of_month = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+                                var day = ("0" + lastDay_of_month.getDate()).slice(-2);
+                                var month = ("0" + (lastDay_of_month.getMonth() + 1)).slice(-2);
+
+                                $(this).val(lastDay_of_month.getFullYear()+"-"+(month)+"-"+(day))
+                                //console.log(lastDay_of_month)
+                            });
+                        {% endif %}
+
+
+                    </script>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-auto" hidden>
+            <select id="{{ prefix }}_{{ chart_title }}_statusList" class="selectpicker" multiple>Status:<br>
+                {% for status_tmp in context_info.finding_status_list %}
+                    <option selected="selected" value="{{ status_tmp.name }}">{{ status_tmp.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-auto" hidden>
+            <select id="{{ prefix }}_{{ chart_title }}_severityList" class="selectpicker" multiple>Severity:<br>
+                {% for severity_tmp in context_info.finding_severity_list %}
+                    <option selected="selected" value="{{ severity_tmp.name }}"> {{ severity_tmp.name }}</option>><br>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <script>
+        $(document).ready(function(){
+            $('.selectpicker').selectpicker();
+            $("#{{ prefix }}_{{ chart_title }}_update").trigger("click")
+        })
+    </script>
+</div>

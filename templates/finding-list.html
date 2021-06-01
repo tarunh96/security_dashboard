@@ -1,0 +1,54 @@
+{% extends 'template-base.html' %}
+
+{% block content %}
+
+    <div class="container-fluid">
+        <h1 class="mt-4">Findings List</h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item active">{{ context_info.finding_type }}</li>
+        </ol>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="main-card mb-4 card">
+                        <div class="card-header">
+                            <i class="fas fa-table mr-1"></i>
+                                {{ context_info.finding_type }} - Monthly identified findings
+                        </div>
+                        <div class="card-body">
+                            <!-- We pass the chart the finding type list with the current finding type. The API will only return findings inside this list-->
+                            {% with prefix=context_info.finding_type chart_title='Monthly' finding_typeList=context_info.finding_type %}
+                                {% include 'month_create_date_findings_bar_chart.html' %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <i class="fas fa-table mr-1"></i>
+                                {{ context_info.finding_type }} - Findings grouped by Status
+                        </div>
+                        <div class="card-body">
+                            {% with prefix=context_info.finding_type chart_title='Status' finding_typeList=context_info.finding_type %}
+                                {% include 'status_findings_pie_chart.html' %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-table mr-1"></i>
+                Findings {{ context_info.finding_type }}
+            </div>
+            <div class="card-body">
+                {% with finding_list=object_list finding_type=context_info.finding_type %}
+                    {% include 'finding-list-datatable.html' %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

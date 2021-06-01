@@ -1,0 +1,16 @@
+{% extends 'template-base.html' %}
+{% block content %}
+    <div class="container-fluid">
+        <h1 class="mt-4">CSV Upload</h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item active">You are uploading a CSV for {{ context_info.model }}</li>
+        </ol>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <input type="submit" name='save' value="Upload" >
+        </form>
+
+    </div>
+{% endblock %}

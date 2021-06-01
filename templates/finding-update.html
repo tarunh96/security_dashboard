@@ -1,0 +1,64 @@
+{% extends 'form-base.html' %}
+{% block form_content %}
+    {% load crispy_forms_tags %}
+    <div class="container-fluid">
+        <h1 class="mt-4">{{ context_info.finding_type }} Finding Update</h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item active">Update Finding ID: {{ context_info.finding_id }}</li>
+        </ol>
+        <div class="col-md-8">
+            <form method="post">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <input type="submit" name='save' value="Save" class="btn btn-success">
+                <a href="{% url 'finding-delete' context_info.to_organisation_url context_info.finding_type context_info.finding_id %}" class="btn btn-danger">Delete</a>
+            </form>
+
+        </div>
+
+    </div>
+    <div class="container">
+        <div class="card mb-4" style="margin-top: 30px">
+        <div class="card-header">
+            <i class="fas fa-table mr-1"></i>
+            History
+        </div>
+        <div class="card-body">
+
+            {% if context_info.history %}
+                <table class="table table-bordered table-responsive table-hover table-striped" width="100%" cellspacing="0">
+                    <tr>
+                        <th>MODIFY_DATE</th>
+                        <th>ID</th>
+                        <th>SPM ID</th>
+                        <th>DESCRIPTION</th>
+                        <th>SHORT_DESCRIPTION</th>
+                        <th>RESPONSIBLE</th>
+                        <th>COMMENT</th>
+                        <th>CREATE_DATE</th>
+                        <th>OVERDUE_DATE</th>
+                        <th>STATUS</th>
+                        <th>SEVERITY</th>
+                    </tr>
+                    {% for change in context_info.history %}
+                        <tr>
+                            <td>{{ change.history_date }}</td>
+                            <td>{{ change.id }}</td>
+                            <td>{{ change.spm_id }}</td>
+                            <td>{{ change.description }}</td>
+                            <td>{{ change.short_description }}</td>
+                            <td>{{ change.responsible }}</td>
+                            <td>{{ change.comment }}</td>
+                            <td>{{ change.create_date }}</td>
+                            <td>{{ change.overdue_date }}</td>
+                            <td>{{ change.status }}</td>
+                            <td>{{ change.severity }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% endif %}
+        </div>
+    </div>
+    </div>
+
+{% endblock %}

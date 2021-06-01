@@ -1,0 +1,194 @@
+{%  load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        {% include 'head.html' %}
+        <style>
+
+            table.dataTable thead .sorting:after,
+            table.dataTable thead .sorting:before,
+            table.dataTable thead .sorting_asc:after,
+            table.dataTable thead .sorting_asc:before,
+            table.dataTable thead .sorting_asc_disabled:after,
+            table.dataTable thead .sorting_asc_disabled:before,
+            table.dataTable thead .sorting_desc:after,
+            table.dataTable thead .sorting_desc:before,
+            table.dataTable thead .sorting_desc_disabled:after,
+            table.dataTable thead .sorting_desc_disabled:before {
+                bottom: .5em;
+            }
+
+        </style>
+
+    </head>
+    <div class="sb-nav-fixed">
+        {% include "navbar.html" %}
+        {% include "sidebar.html" %}
+            <div id="layoutSidenav_content">
+                <main>
+
+                    <div id="errors">
+                        {% for error in errors %}
+                            {{ error }}
+                        {%  endfor %}
+                    </div>
+
+
+
+                    <div class="container-fluid">
+                        <h1 class="mt-4">Findings List</h1>
+                        <ol class="breadcrumb mb-4">
+                            <li class="breadcrumb-item active">{{ context_info.finding_type }}</li>
+                        </ol>
+                        <div class="container">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="main-card mb-4 card">
+                                        <div class="card-header">
+                                            <i class="fas fa-table mr-1"></i>
+                                                {{ context_info.finding_type }} - Monthly identified findings
+                                        </div>
+                                        <div class="card-body">
+                                            <!-- We pass the chart the finding type list with the current finding type. The API will only return findings inside this list-->
+                                            {% with prefix=context_info.finding_type chart_title='Monthly' finding_typeList=context_info.finding_type %}
+                                                {% include 'month_create_date_findings_bar_chart.html' %}
+                                            {% endwith %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card mb-4">
+                                        <div class="card-header">
+                                            <i class="fas fa-table mr-1"></i>
+                                                {{ context_info.finding_type }} - Findings grouped by Status
+                                        </div>
+                                        <div class="card-body">
+                                            {% with prefix=context_info.finding_type chart_title='Status' finding_typeList=context_info.finding_type %}
+                                                {% include 'status_findings_pie_chart.html' %}
+                                            {% endwith %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-table mr-1"></i>
+                                    Findings {{ context_info.finding_type }}
+                                </div>
+                                <div class="card-body">
+
+                                    <table class="table table-responsive table-hover table-striped dataTable" width="100%" id="dataTable{{ context_info.finding_type}}" cellspacing="0">
+                                        <thead>
+                                            <tr role="row">
+                                                <th>View</th>
+                                                <th>ID</th>
+                                                <th>SHORT_DESCRIPTION</th>
+                                                <th>PLANT ID</th>
+                                                <th>PLANT NAME</th>
+                                                <th>TO_ORGANISATION</th>
+                                                <th>STATUS</th>
+                                                <th>SEVERITY</th>
+                                                <th>CREATE_DATE</th>
+                                                <th>DUE_DATE</th>
+
+
+                                            </tr>
+                                            <tr id="searchTR{{ context_info.finding_type}}">
+                                                <th>View</th>
+                                                <th>ID</th>
+                                                <th>SHORT_DESCRIPTION</th>
+                                                <th>PLANT ID</th>
+                                                <th>PLANT NAME</th>
+                                                <th>TO_ORGANISATION</th>
+                                                <th>STATUS</th>
+                                                <th>SEVERITY</th>
+                                                <th>CREATE_DATE</th>
+                                                <th>DUE_DATE</th>
+
+                                            </tr>
+                                        </thead>
+                                        <tfoot>
+                                            <tr>
+                                                <th>View</th>
+                                                <th>ID</th>
+                                                <th>SHORT_DESCRIPTION</th>
+                                                <th>PLANT ID</th>
+                                                <th>PLANT NAME</th>
+                                                <th>TO_ORGANISATION</th>
+                                                <th>STATUS</th>
+                                                <th>SEVERITY</th>
+                                                <th>CREATE_DATE</th>
+                                                <th>DUE_DATE</th>
+
+                                            </tr>
+                                        </tfoot>
+                                        <tbody>
+
+                                            {% for finding_object in finding_list %}
+
+                                                <tr>
+                                                    <td>
+                                                        <a href="{% url 'finding-update' context_info.to_organisation_url context_info.finding_type finding_object.id %}" class="btn btn-primary">View</a>
+                                                    </td>
+                                                    <td>{{ finding_object.id }}</td>
+                                                    <td>{{ finding_object.short_description }}</td>
+                                                    <td>{{ finding_object.plant.plant_id }}</td>
+                                                    <td>{{ finding_object.plant.name }}</td>
+                                                    <td>{{ finding_object.plant.to_organisation.to_organisation_name }}</td>
+                                                    <td>{{ finding_object.status.status_name }}</td>
+                                                    <td>{{ finding_object.severity.severity_name }}</td>
+                                                    <td>{{ finding_object.create_date }}</td>
+                                                    <td>{{ finding_object.overdue_date }}</td>
+
+
+                                                </tr>
+
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                    <script>
+                                        $(document).ready(function() {
+
+                                            // Setup - add a text input to each footer cell
+                                            $("#searchTR{{ context_info.finding_type}} th").each( function () {
+
+                                                var title = $(this).text();
+                                                if (title != "View"){
+                                                    $(this).html( '<input class="col-xs-1" type="text" placeholder="Search ' + title + '" />' );
+
+                                                }
+                                                else{
+                                                    $(this).html("");
+                                                }
+
+                                            } );
+
+                                            // DataTable
+                                            var table = $('#dataTable{{ context_info.finding_type}}').DataTable({
+
+                                                fixedColumns: true
+                                            });
+
+                                            // Apply the search
+                                            table.columns().every( function () {
+                                                var that = this;
+
+                                                $( 'input', this.header() ).on( 'keyup change clear', function () {
+                                                    if ( that.search() !== this.value ) {
+                                                        that.search( this.value ).draw();
+                                                    }
+                                                } );
+                                            } );
+                                        } );
+
+                                    </script>
+                                </div>
+                            </div>
+
+
+
+
+                    </div>
+                </main>
+                {% include 'footer.html' %}

@@ -1,0 +1,168 @@
+
+<script type="application/javascript">
+
+    $(function() {
+        /**
+         *  This function will return a stacked bar chart by severities
+         * */
+
+        var status_colors = {
+            'CLOSED': "#61dd4a",
+            'PLANNED': "#fd852f",
+            'NOT_PLANNED': "#ff3f3e",
+            'WIP': "#dad328",
+            'SOLVED': "#bdff69"
+        }
+        var MAX_LOOP_ITER = 100
+        var DEFAULT_SEVERITY_COLOR = "#292e34"
+        // when the user presses the button update
+        $('#{{ prefix }}_{{ chart_title }}_update').click(function () {
+            // define the arrays for the chart: labels and values
+
+           // get the severity list from the user input.
+            var severityList = $("#{{ prefix }}_{{ chart_title }}_severityList").val()
+
+            var chart_data = {
+                'labels': [],
+                'data': [],
+                'backgroundColor': []
+            }
+            // make query to our API AllFindings
+            $.getJSON(
+
+                "{% url 'findings-api' context_info.to_organisation_url %}",
+                {
+                    "severity": severityList.toString(),
+                    "finding_typeList": "{{ finding_typeList }}"
+
+                },
+                function (json_data) {
+                    // json_data will store the result
+                    // all findings arr is the json data passed to an array
+                    var all_findings_arr = []
+                    $.each(json_data['finding_list'], function(finding_type_index, finding_type_list){
+
+                        all_findings_arr = all_findings_arr.concat(finding_type_list)
+                    })
+
+
+
+                    // loop over all findings inside this finding_type
+                    $.each(all_findings_arr, function(finding_index, finding_obj) {
+
+
+                        var finding_status = this['status_name']
+                        var status_index = chart_data['labels'].indexOf(finding_status)
+                        // check if the status exists in the chart data
+                        if (status_index <= -1) {
+                            // if not, create object to store this severity's data
+                            chart_data['labels'].push(finding_status)
+                            chart_data['data'].push(0)
+                            chart_data['backgroundColor'].push(status_colors[finding_status])
+                            status_index = chart_data['labels'].indexOf(finding_status)
+                        }
+
+                        // we can write
+                        chart_data['data'][status_index]++
+
+                    });
+
+                }).done(function () { // once we finish the jquery function.
+                // Remember that it is async so we have to make sure we process the information after
+
+                // there were some troubles with the charts overlapping after each update
+                // remove any existing chart inside the div
+                //$("#{{ prefix }}_{{ chart_title }}").remove();
+                $("#{{ prefix }}_{{ chart_title }}_barChartCanvas").html("")
+                // add it again
+                $("#{{ prefix }}_{{ chart_title }}_barChartCanvas").append("<canvas id=\"{{ prefix }}_{{ chart_title }}\" width=\"800\" height=\"400\"></canvas><br>");
+
+                // put the chart in the canvas
+                var ctx = document.getElementById('{{ prefix }}_{{ chart_title }}').getContext('2d');
+
+                var myChart = new Chart(ctx, {
+                    type: 'pie',
+
+                    data: {
+                        labels: chart_data['labels'],
+                        datasets: [chart_data]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        title: {
+                            display: true,
+                            text: "{{ chart_title }} Summary of current vulnerabiities"
+                        },
+                        animation: {
+                            duration: 300,
+                        },
+                        onHover: function (evt, elements) {
+                            if (elements && elements.length) {
+                                segment = elements[0];
+                                this.chart.update();
+                                selectedIndex = segment["_index"];
+                                segment._model.outerRadius += 5;
+                            } else {
+                                if (segment) {
+                                    segment._model.outerRadius -= 5;
+                                }
+                              segment = null;
+                            }
+                        },
+                        layout: {
+                            padding: 10
+                        },
+
+                        tooltips: {
+                            enabled: true
+                        },
+                        plugins: {
+                            datalabels: {
+                                formatter: (value, ctx) => {
+                                    let sum = 0;
+                                    let dataArr = ctx.chart.data.datasets[0].data;
+                                    dataArr.map(data => {
+                                        sum += data;
+                                    });
+                                    let percentage = (value*100 / sum).toFixed(2)+"%";
+                                    return percentage;
+                                },
+                                color: '#fff',
+                            }
+                        }
+                    },
+
+                });
+
+
+            });
+
+        });
+    });
+</script>
+
+<div class="col-md-12">
+    <div id="{{ prefix }}_{{ chart_title }}_barChartCanvas">
+        <canvas id="{{ prefix }}_{{ chart_title }}"></canvas><br>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <button name='update' value="Update" class="btn btn-success" id="{{ prefix }}_{{ chart_title }}_update">Update</button>
+        </div>
+        <div class="col-md-6">
+            <select id="{{ prefix }}_{{ chart_title }}_severityList" class="selectpicker" multiple>Severity:<br>
+                {% for severity_tmp in context_info.finding_severity_list %}
+                    <option selected="selected" value="{{ severity_tmp.name }}"> {{ severity_tmp.name }}</option>><br>
+                {% endfor %}
+            </select>
+        </div>
+
+    </div>
+    <script>
+        $(document).ready(function(){
+            $("#{{ prefix }}_{{ chart_title }}_update").trigger("click")
+        })
+    </script>
+</div>

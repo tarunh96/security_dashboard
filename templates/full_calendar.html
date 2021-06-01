@@ -1,0 +1,188 @@
+
+
+
+<script>
+
+    $(function() {
+
+        var severity_colors = {
+            'CRITICAL': "#000",
+            'HIGH': "#fd3636",
+            'MEDIUM': "#fdb14e",
+            'LOW': "#46aadd",
+            'CLOSED': "#61dd4a"
+        }
+        $.each(severity_colors, function (key, value) {
+            $("#legend_ul").append('<li><span style="background:' + value + ';"></span>' + key + '</li>')
+        })
+
+        var MAX_LOOP_ITER = 100
+        var DEFAULT_SEVERITY_COLOR = "#292e34"
+
+        // when the user presses the update button
+        $('#{{ prefix }}_{{ chart_title }}_update').click(function () {
+
+            var calendarEl = document.getElementById('calendar');
+            calendarEl.innerHTML = ''
+            // we create a new calendar
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                selectable: true,
+                plugins: [ 'dayGrid'],
+                events: function(info, successCallback, failureCallback) {
+                    // the events will a result of the function callback.
+                    // We need to call successCallback with our events array at the end
+                    // here we get our events list only for this month
+
+                    // get the status list from the user input.
+                    var statusList = $("#{{ prefix }}_{{ chart_title }}_statusList").val()
+
+
+                    // get the severity list from the user input. Loop over all checkboxes.
+                    var severityList = $("#{{ prefix }}_{{ chart_title }}_severityList").val()
+
+                    // get start and end date visible in the calendar
+                    var fromDate = new Date(info['start']);
+                    var toDate = new Date(info['end']);
+
+                    // actual dates that will be sent to the aPI
+                    var fromDateAPI = fromDate.getFullYear() + "-" + (fromDate.getMonth()+1) + "-" + fromDate.getDate();
+                    var toDateAPI = toDate.getFullYear() + "-" + (toDate.getMonth()+1) + "-" + toDate.getDate();
+
+                    let events_arr = [];
+                    // make query to our API AllFindings
+                    $.getJSON(
+
+                        "{% url 'findings-api' context_info.to_organisation_url %}",
+                        {
+                            "fromDateOverdue": fromDateAPI,
+                            "toDateOverdue": toDateAPI,
+                            "status": statusList.toString(),
+                            "severity": severityList.toString()
+
+                        },
+                        function (json_data) {
+                            // json_data will store the result from the query to the API
+
+                            // loop over each finding type
+                            $.each(json_data['finding_list'], function(finding_type_name, finding_type_list) {
+                                // loop over finding list inside the finding_type
+                                $.each(finding_type_list, function() {
+
+                                    var asset_id = "" // will be the asset id
+                                    if (this.app_id != null){
+                                        asset_id = "APP-" + this.app_id.toString()
+                                    }
+                                    else if(this.plant_id != null){
+                                        asset_id = "PLANT-" + this.plant_id.toString()
+                                    }
+
+                                    // "this" is the finding_obj
+                                    var month_index_create_date = new Date(this['create_date']).getMonth();
+                                    var event_color = severity_colors[this.severity_name]
+
+                                    // if the finding is closed, mark it as closed colour
+                                    if (this.status_name == "CLOSED") event_color = severity_colors["CLOSED"]
+                                    // add finding to our list
+                                    events_arr.push({
+                                        'backgroundColor': event_color,
+                                        'title': this.short_description.toString(),
+                                        'description': finding_type_name +
+                                                        " - " +
+                                                        this.severity_name.toString() +
+                                                        " - " +
+                                                        this.status_name.toString() +
+                                                        " - " +
+                                                        asset_id +
+                                                        " - " +
+                                                        this.description.toString(),
+                                        'start': this.overdue_date.toString(),
+                                        'end': this.overdue_date.toString(),
+                                        'url': "{% url 'finding-update' context_info.to_organisation_url 'FINDING_TYPE' '0' %}".replace("FINDING_TYPE", finding_type_name).replace("0", this.id)
+                                    })
+
+
+                                });
+
+                            });
+                        }).done(function(){
+                            // remember that jquery is async so we need to do this after the function is done
+
+                            successCallback(events_arr); // with this statement the events are stored inside the
+                                                         // calendar
+                    });
+
+
+                },
+                eventRender: function(info) {
+
+                    $(info.el).tooltip({
+                        title: info.event.title + "\n" + info.event.extendedProps.description,
+                        trigger: 'hover',
+                        placement: 'top',
+                        container: 'body'
+                      });
+                },
+                style: {
+                    tip: true, // Give it a speech bubble tip
+                    backgroundColor: "#000",
+                },
+            });
+            calendar.render();
+
+        });
+    });
+
+</script>
+
+<div class="container">
+
+    <div class="row">
+
+        <div class="col-md-10">
+            <div id='calendar'></div>
+            <div class="row" style="width: 30%">
+                <div class="col-md-auto" hidden>
+                    <select id="{{ prefix }}_{{ chart_title }}_statusList" class="selectpicker" multiple>Status:<br>
+                        {% for status_tmp in context_info.finding_status_list %}
+                            <option selected="selected" value="{{ status_tmp.name }}">{{ status_tmp.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-auto" hidden>
+                    <select id="{{ prefix }}_{{ chart_title }}_severityList" class="selectpicker" multiple>Severity:<br>
+                        {% for severity_tmp in context_info.finding_severity_list %}
+                            <option selected="selected" value="{{ severity_tmp.name }}"> {{ severity_tmp.name }}</option>><br>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-auto" hidden>
+                    <button name='update' value="Update" class="btn btn-success" id="{{ prefix }}_{{ chart_title }}_update">Update</button>
+                </div>
+            </div>
+            <script>
+                $(document).ready(function(){
+                    $("#{{ prefix }}_{{ chart_title }}_update").trigger("click")
+                })
+
+            </script>
+        </div>
+        <div class="col-md-2">
+            <div id="legend_div" class="main-card mb-1 card">
+                <div class="card-body">
+                    <div class='my-legend'>
+                        <div class='legend-title'>Color Legend</div>
+                        <div class='legend-scale'>
+                            <ul id="legend_ul" class='legend-labels'>
+
+                            </ul>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+

@@ -1,0 +1,146 @@
+
+<script type="application/javascript">
+
+
+    $(function() {
+        // when the user presses the button update
+        $('#{{ prefix }}_{{ chart_title }}_update').click(function () {
+            // define the arrays for the chart: labels and values
+            var month_names_arr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            var month_values_arr = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+            var month_values_by_category = [{},{},{},{},{},{},{},{},{},{},{},{}]
+
+
+            // get the status list from the user input.
+            var statusList = $("#{{ prefix }}_{{ chart_title }}_statusList").val()
+
+
+            // get the severity list from the user input. Loop over all checkboxes.
+            var severityList = $("#{{ prefix }}_{{ chart_title }}_severityList").val()
+
+            // parse the dates from the user input
+            var fromMonthInput = $("#{{ prefix }}_{{ chart_title }}_from").val();
+            var toMonthInput = $("#{{ prefix }}_{{ chart_title }}_to").val();
+
+            var fromMonthIndex = month_names_arr.indexOf(fromMonthInput);
+            var toMonthIndex = month_names_arr.indexOf(toMonthInput);
+
+            var fromDate = new Date(new Date().getFullYear(), fromMonthIndex, 1);
+            var toDate = new Date(new Date().getFullYear(), toMonthIndex + 1, 0);
+
+            // the actual values we will send to the API
+            var fromDateAPI = fromDate.getFullYear() + "-" + (fromDate.getMonth()+1) + "-" + fromDate.getDate();
+            var toDateAPI = toDate.getFullYear() + "-" + (toDate.getMonth()+1) + "-" + toDate.getDate();
+
+            // make query to our API AllFindings
+            $.getJSON(
+
+                "{% url 'single-finding-type-api' context_info.to_organisation_url context_info.finding_type %}",
+                {
+                    "fromDateCreate": fromDateAPI,
+                    "toDateCreate": toDateAPI,
+                    "status": statusList.toString(),
+                    "severity": severityList.toString()
+
+                },
+                function (json_data) {
+                    // json_data will store the result
+
+                    // loop over all findings
+                    $.each(json_data['finding_list'], function(finding_index, finding_object) {
+                        console.log(finding_object)
+
+                        // "this" is the finding_obj
+                        var month_index_create_date = new Date(finding_object['create_date']).getMonth();
+                        month_values_arr[month_index_create_date]++;
+
+                    });
+                }
+            ).done(function () { // once we finish the jquery function.
+                // Remember that it is async so we have to make sure we process the information after
+
+
+                var label_array = month_names_arr.slice(fromMonthIndex, (toMonthIndex + 1));
+                var data_array = month_values_arr.slice(fromMonthIndex, (toMonthIndex + 1));
+
+
+                /*var background_colors = ["#3e95cd", "#8e5ea2","#3cba9f","#e8c3b9","#c45850", "#65a160",
+                                         "#3bb1d1", "#8f3bd1", "#b82a80", ];*/
+
+                // there were some troubles with the charts overlapping after each update
+                // remove any existing chart inside the div
+                $("#{{ prefix }}_{{ chart_title }}").remove();
+                // add it again
+                $("#{{ prefix }}_{{ chart_title }}_barChartCanvas").append("<canvas id=\"{{ prefix }}_{{ chart_title }}\" width=\"800\" height=\"400\"></canvas><br>");
+
+                // put the chart in the canvas
+                var ctx = document.getElementById('{{ prefix }}_{{ chart_title }}').getContext('2d');
+
+                var myChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                      labels: label_array,
+                      datasets: [{
+                        label: "",
+                        backgroundColor: "#3e95cd",
+                        data: data_array
+                      }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        title: {
+                            display: true,
+                            text: "{{ chart_title }} Summary"
+                        }
+                    }
+                });
+
+
+            });
+
+        });
+    });
+</script>
+
+<div class="col-md-12">
+    <div id="{{ prefix }}_{{ chart_title }}_barChartCanvas">
+        <canvas id="{{ prefix }}_{{ chart_title }}" width="800" height="400"></canvas><br>
+    </div>
+
+    <label>Created From: </label>
+    <input type="date" id="{{ prefix }}_{{ chart_title }}_from">
+
+    <label>Created To: </label>
+    <input type="date" id="{{ prefix }}_{{ chart_title }}_to">
+    <script type="application/javascript">
+        $('#{{ prefix }}_{{ chart_title }}_from').val(new Date().getFullYear() + "-01-01")
+        $('#{{ prefix }}_{{ chart_title }}_to').val(new Date().getFullYear() + "-12-31")
+    </script>
+    <div class="row">
+        <div class="col-md-auto">
+            <select id="{{ prefix }}_{{ chart_title }}_statusList" class="selectpicker" multiple>Status:<br>
+                {% for status_tmp in context_info.finding_status_list %}
+                    <option selected="selected" value="{{ status_tmp.name }}">{{ status_tmp.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-auto">
+            <select id="{{ prefix }}_{{ chart_title }}_severityList" class="selectpicker" multiple>Severity:<br>
+                {% for severity_tmp in context_info.finding_severity_list %}
+                    <option selected="selected" value="{{ severity_tmp.name }}"> {{ severity_tmp.name }}</option>><br>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-auto">
+            <button name='update' value="Update" class="btn btn-success" id="{{ prefix }}_{{ chart_title }}_update">Update</button>
+        </div>
+    </div>
+    <script>
+        $(document).ready(function(){
+            $('.selectpicker').selectpicker();
+            $("#{{ prefix }}_{{ chart_title }}_update").trigger("click")
+        })
+    </script>
+</div>

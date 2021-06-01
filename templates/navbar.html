@@ -1,0 +1,26 @@
+{% load static %}
+<nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+    <a class="navbar-brand" href="">Findings Platform</a>
+    <button class="btn btn-link btn-sm order-1 order-lg-0" id="sidebarToggle" href="#">
+        <i class="fas fa-bars"></i>
+    </button>
+    <ul class="navbar-nav ml-auto ml-md-0">
+        <li class="nav-item dropdown">
+            <label id="to_organisation_menu" class="mb-2 mr-2 btn btn-dark">
+                <a class="nav-link dropdown-toggle" id="market_dropdown" href="" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    TO - Organisation
+                </a>
+            </label>
+
+            <ul class="dropdown-menu">
+                {% for to_organisation_name, to_organisation_object in context_info.to_organisation_list.items %}
+                    {% with to_organisation_node=to_organisation_object %}
+                        {% include 'to_organisation_menu.html' %}
+                    {% endwith %}
+                {% endfor %}
+
+            </ul>
+        </li>
+    </ul>
+    <label class="mb-2 mr-2 btn btn-dark">{{ context_info.to_organisation_db }}</label>
+</nav>

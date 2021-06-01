@@ -1,0 +1,367 @@
+{% extends 'template-base.html' %}
+{% block content %}
+    <div class="container">
+        <div class="main-card mb-3 card" style="margin-top: 20px">
+            <div class="card-body">
+                <h3> Our DB values </h3>
+                <div class="table-responsive">
+
+                    <table class="table table-bordered" cellspacing="0">
+                        <thead>
+                            <tr>
+
+                                {% for csv_setting_single_column in csv_information.csv_setting_columns %}
+                                    <th> "{{ csv_setting_single_column.name }}"</th>
+                                {% endfor %}
+
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div>
+        <div class="container">
+            <div class="main-card mb-3 card" style="margin-top: 20px">
+                <div class="card-body">
+                    <label>Select your CSV settings</label>
+
+                    <select id="my_csv_settings" onchange="check_settings_header(this.value);">
+                        {% for csv_setting in csv_information.csv_settings %}
+                            <option value = "{{ csv_setting }}">Setting id: {{ csv_setting.id }} - {{ csv_setting.setting_name }}</option>
+                        {% endfor %}
+                        <option value="New" selected>New setting</option>
+                    </select>
+
+                    <div id="settings_reference">
+                        <input type="hidden" id="setting_id" name="setting_id" value="">
+                        <label>Setting name</label> <input type="text" id="setting_name" name="setting_name" value="">
+                    </div>
+
+                    <button id='saveCSVSettings' value="Save" class="btn btn-success"> Save setting </button>
+                    <button id='deleteCSVSettings' value="Delete" class="btn btn-danger"> Delete Setting </button>
+                    <span id="csv_settings_errors">
+
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div id="upload_errors" class="alert alert-info">
+            <ul>
+
+            </ul>
+        </div>
+
+        <div class="container">
+            <div class="main-card mb-3 card" style="margin-top: 20px">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="tablePreview" width="100%" cellspacing="0">
+                            <thead>
+                                <tr id="csv_headers">
+                                    {% for cell_header in csv_information.headers_data %}
+                                        <th>CSV: {{ cell_header }}</th>
+                                    {% endfor %}
+                                </tr>
+                                <tr id="db_headers">
+                                    {% for cell_header in csv_information.headers_data %}
+                                        {% with i=forloop.counter0 %}
+                                            <th>
+                                                DB:
+                                                <select name="header[{{ i }}]" type="text" id="{{ cell_header }}">
+                                                    <option value = "" selected>-</option>
+                                                    {% for csv_setting_single_column in csv_information.csv_setting_columns %}
+                                                        <option value="{{ csv_setting_single_column.name }}">{{ csv_setting_single_column.name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </th>
+                                        {% endwith %}
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for data_row in csv_information.lines_data %}
+                                    <tr id="data_line_{{ forloop.counter0 }}">
+                                        {% with i=forloop.counter0 %}
+                                            {% for data_cell in data_row %}
+                                                {% with j=forloop.counter0 %}
+                                                    <td>{{ data_cell }}</td>
+                                                {% endwith %}
+                                            {% endfor %}
+                                        {% endwith %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+
+                        </table>
+                    </div>
+                    <button style="margin-top: 20px" id='uploadCSVData' value="Save" class="btn-success"> Upload Data </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function check_settings_header(settings_object){
+            // reset all entries for setting
+            $('#db_headers').find('select').val("");
+            $('#settings_reference').find('input').val("");
+
+            // adapt quotes from settings object to javascript format. Quit single quotes for double quotes
+            settings_object = settings_object.replace(/'/g, '"').replace(/None/g, "\"None\"");
+
+            // if we selected new, leave all empty
+            if (settings_object != "<New>") {
+                console.log(settings_object)
+                var setting_obj = JSON.parse(settings_object);
+                console.log(setting_obj)
+
+                // this json will contain a register from the corresponding model setting table.
+                // the keys are the column title
+                // the vals are the columns of the CSV the user configured
+                jQuery.each(setting_obj, function (key, val) {
+                    //we now have our DB columns in the key
+                    //the custom csv columns in the val
+                    //the textfields will have the id as csv column
+
+                    //this is invisible to the user so we adjusted manually
+                    if (key == "id"){
+                        if (document.getElementById("setting_id")) {
+
+                            $("#setting_id").val(val);
+
+                        }
+                    }
+                    //this is invisible to the user so we adjusted manually
+                    else if (key == "setting_name") {
+
+                        if (document.getElementById(key)) {
+                            $("#" + key).val(val);
+                            console.log(key + ": " + val)
+                        }
+                    }
+
+                    // the key of the fields is the name the user configured  in the CSV
+                    // the val of the field is the column title in ur setting model. the name in the DB column the user wants that column in
+                    else if (document.getElementById(val)) {
+
+                        $("#" + val).val(key);
+                    }
+                })
+            }
+        }
+    </script>
+    <script>
+
+        // when the user clicks on save setting
+        $("#saveCSVSettings").click(function(){
+            $("#csv_settings_errors").empty()
+            // we need to send to the api the setting the user has selected
+            var setting_obj = {}
+            var old_object = $("#my_csv_settings").find(":selected")
+            if ($("#setting_id").val() != ""){
+                setting_obj['id'] = $("#setting_id").val()
+            }
+            setting_obj['setting_name'] = $("#setting_name").val()
+            $("#db_headers > th > select").each(function(){
+                if ($(this).find(":selected").val() in setting_obj){
+                    // the key is repeated, abort
+                    $("#csv_settings_errors").empty()
+                    $("#csv_settings_errors").append("<p>" + $(this).find(":selected").val() + " field is repeated</p>")
+                    end()
+                }
+                else{
+                    if ($(this).find(":selected").val() != ""){
+                        setting_obj[$(this).find(":selected").val()] = $(this).attr('id')
+                    }
+                }
+
+
+            }).promise().done(function(){
+
+                $.ajax({
+                    beforeSend: function (xhr, settings) {
+                        xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
+                    },
+                    dataType: 'json',
+                    data: {'upload_data': JSON.stringify(setting_obj)},
+                    url: "{% url 'csv-settings-api' context_info.model 'save' %}",
+                    type: 'POST',
+                    success: function(json_data){
+
+                       // answer
+                        console.log(json_data)
+                        if (json_data['status'] != "0") { // if something went wrong
+                            // there were some errors. Show them
+                            $("#csv_settings_errors").empty()
+                            $("#csv_settings_errors").append("<p>" + JSON.stringify(json_data['errors']) + "</p>")
+                        }
+                        else { // if everything went okay
+                            $("#csv_settings_errors").empty()
+                            $("#csv_settings_errors").append('<i class=\"fa fa-check\" aria-hidden=\"true\"></i>\n')
+
+                            // if we were creating a new object
+                            if (old_object.val() == "New"){
+                                // remove the last option (always the "New")
+                                $('#my_csv_settings option[value="New"]').remove()
+
+                                // we need to add an option
+                                $("#my_csv_settings").append(
+                                    "<option value = " + JSON.stringify(json_data['settings_obj']) + ">Setting id: " +  json_data['settings_obj']['id'] + " - " + json_data['settings_obj']['setting_name'] + "</option>"
+                                )
+                                // select the created option
+                                $("#my_csv_settings option:last").attr("selected", "selected");
+
+                                // add the "New" option we removed
+                                $("#my_csv_settings").append('<option value="New" selected>New setting</option>')
+                            }
+                            else{
+
+                                old_object.val(JSON.stringify(json_data['settings_obj']))
+                                old_object.text("Setting id: " + json_data['settings_obj']['id'] + " - " + json_data['settings_obj']['setting_name'])
+                            }
+                       }
+                    }
+                })
+            });
+        });
+
+
+        // when the user clicks on delete setting
+        $("#deleteCSVSettings").click(function(){
+            $("#csv_settings_errors").empty()
+            // we need to send to the api the setting the user has selected
+            var setting_obj = {}
+            var old_object = $("#my_csv_settings").find(":selected")
+            if ($("#setting_id").val() != ""){
+                setting_obj['id'] = $("#setting_id").val()
+            }
+
+            $.getJSON(
+                "{% url 'csv-settings-api' context_info.finding_type 'delete' %}",
+                setting_obj,
+                function(json_data) {
+                    // answer
+
+                    if (json_data['status'] != 0) { // if something went wrong
+                        // there were some errors. Show them
+                        $("#csv_settings_errors").empty()
+                        $("#csv_settings_errors").append("<p>" + JSON.stringify(json_data['errors']) + "</p>")
+                    } else { // if everything went okay
+                        $("#csv_settings_errors").empty()
+                        $("#csv_settings_errors").append('<i class=\"fa fa-check\" aria-hidden=\"true\"></i>\n')
+
+                        // delete old_object
+
+                        old_object.remove()
+
+                        // reset all fields
+                        $("#my_csv_settings").val($("#my_csv_settings option:last").attr("selected", "selected"))
+                        $("#setting_id").val("")
+                        $("#setting_name").val("")
+                        $("#db_headers > th > select").each(function () {
+                            $(this).val("")
+                        })
+                    }
+                }
+            )
+        });
+
+
+
+
+        $("#uploadCSVData").click(function() {
+           // when the user clicks the button we need to reorganize the data
+            /*
+            data = [
+                {
+                    to_organisation: x,
+                    app_id: y,
+                    .
+                    .
+                    .
+                },
+            ]
+             */
+            // headers_arr will contain the db columns names in user order
+            var headers_arr = []
+
+            // passing the header inputs into an object with db_col: index_number in csv columns
+            $("#db_headers > th > select option:selected").each(function(){
+
+                headers_arr.push($(this).val())
+            });
+
+            // this array will contain all data to upload. An array of jsons
+            var arr_upload_data = []
+
+            // for each row in the table
+            $("#tablePreview > tbody > tr").each(function(tableRowId, tableRowData){
+
+                // create our row json
+                var json_row = {}
+
+                //for each cell in the row
+                $(tableRowData).children("td").each(function(tableCellId, tableCellData){
+
+                    // we look for the db key the user selected in this position
+                    if (headers_arr[tableCellId].length > 0){
+                        var field_key = headers_arr[tableCellId]
+                        json_row[field_key] = $(tableCellData).text()
+                    }
+
+                }).promise().done(function(){
+                    arr_upload_data.push(json_row)
+                })
+
+
+            }).promise().done(function(){
+
+                // upload the array
+                $.ajax({
+                    beforeSend: function (xhr, settings) {
+                        xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
+                    },
+                    dataType: 'json',
+                    data: {'upload_data': JSON.stringify(arr_upload_data)},
+                    url: "{% url 'csv-upload-api' context_info.model %}",
+                    type: 'POST',
+                    success: function(result){
+                        $("#uploadCSVData").prop("disabled", true)
+                        console.log(result)
+                        var row_id_prefix = "data_line_" // prefix to locate data_upload_row
+                        $.each(result, function(key, val){ // loop over results
+                            console.log("#" + row_id_prefix + key + "->>" + val)
+                            if (val['status'] == 0){
+                                console.log("#" + row_id_prefix + key)
+                                // in this case the result is success: 0=success
+                                // colour the line or uploaded_row in green
+                                $("#" + row_id_prefix + key).css("background-color", "lightgreen")
+                            }
+                            else{
+                                // there was some error
+                                // paint line in red
+                                $("#" + row_id_prefix + key).css("background-color", "lightcoral")
+                                // add error to error list
+                                $("#upload_errors ul").append('<li>Row ' + (key+1) + ": " + val['message'] + "->" + val['errors'] + '</li>')
+                            }
+                        })
+                    }
+                })
+            });
+        });
+
+        function cell_data_index(input_i, input_j) {
+            return 'data_cell[' + input_i.toString() + '][' + input_j.toString() + ']';
+        }
+
+        function header_index (input_index) {
+            return "header[" + input_index.toString()
+        }
+
+
+    </script>
+{% endblock %}

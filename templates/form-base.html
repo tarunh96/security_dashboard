@@ -1,0 +1,12 @@
+{% extends 'template-base.html' %}
+{% block content %}
+
+    {% if form.errors %}
+        <div class="alert alert-info">
+            {{ form.errors }}
+        </div>
+    {% endif %}
+
+            {% block form_content %}
+            {% endblock %}
+{% endblock %}

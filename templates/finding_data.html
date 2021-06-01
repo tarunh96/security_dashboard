@@ -1,0 +1,94 @@
+<!--Configure tab buttons-->
+<ul class="body-tabs body-tabs-layout tabs-animated body-tabs-animated nav">
+    {% for finding_group_status in finding_grouped_list %}
+        <li class="nav-item">
+            {% if forloop.first %}
+                 <a role="tab" class="nav-link active" id="tab-{{ forloop.counter0 }}" data-toggle="tab" href="#tab-content-{{ finding_group_status.grouper.status_name }}{{ forloop.counter0 }}">
+                    <span>{{ finding_group_status.grouper.status_name }}</span>
+                </a>
+            {% else %}
+                <a role="tab" class="nav-link" id="tab-{{ forloop.counter0 }}" data-toggle="tab" href="#tab-content-{{ finding_group_status.grouper.status_name }}{{ forloop.counter0 }}">
+                    <span>{{ finding_group_status.grouper.status_name }}</span>
+                </a>
+            {% endif %}
+
+        </li>
+    {% endfor %}
+</ul>
+
+<!-- for each tab -->
+<div class="tab-content">
+    {% for finding_list_group in finding_grouped_list %}
+        {% if forloop.first %}
+            <div class="tab-pane tabs-animation fade show active" id="tab-content-{{ finding_list_group.grouper.status_name }}{{ forloop.counter0 }}" role="tabpanel">
+        {% else %}
+            <div class="tab-pane tabs-animation fade show" id="tab-content-{{ finding_list_group.grouper.status_name }}{{ forloop.counter0 }}" role="tabpanel">
+        {% endif %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-table mr-1"></i>
+                    Findings {{ context_info.finding_type }} - {{ finding_list_group.grouper.status_name }} - Total: {{ finding_list_group.list|length }}
+                </div>
+                <div class="card-body">
+
+                        <table class="table table-bordered table-responsive" id="dataTable{{ finding_list_group.grouper.status_name }}" cellspacing="0">
+                            <thead>
+                                <tr>
+
+                                    <th>ID</th>
+                                    <th>SHORT_DESCRIPTION</th>
+                                    <th>APP ID</th>
+                                    <th>APP NAME</th>
+                                    <th>TO_ORGANISATION</th>
+                                    <th>STATUS</th>
+                                    <th>CREATE_DATE</th>
+                                    <th>DUE_DATE</th>
+                                    <th>View</th>
+
+                                </tr>
+                            </thead>
+                            <tfoot>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>SHORT_DESCRIPTION</th>
+                                    <th>APP ID</th>
+                                    <th>APP NAME</th>
+                                    <th>TO_ORGANISATION</th>
+                                    <th>STATUS</th>
+                                    <th>CREATE_DATE</th>
+                                    <th>DUE_DATE</th>
+                                    <th>View</th>
+                                </tr>
+                            </tfoot>
+                            <tbody>
+
+                                {% for finding_object in finding_list_group.list %}
+
+                                    <tr>
+
+                                        <td>{{ finding_object.id }}</td>
+                                        <td>{{ finding_object.short_description }}</td>
+                                        <td>{{ finding_object.app.app_id_human }}</td>
+                                        <td>{{ finding_object.app.name }}</td>
+                                        <td>{{ finding_object.app.to_organisation.to_organisation_name }}</td>
+                                        <td>{{ finding_object.status.status_name }}</td>
+                                        <td>{{ finding_object.create_date }}</td>
+                                        <td>{{ finding_object.overdue_date }}</td>
+                                        <td>
+                                            <a href="{% url 'finding-update' context_info.to_organisation_url context_info.finding_type finding_object.id %}" class="btn btn-primary">View</a>
+                                        </td>
+
+                                    </tr>
+
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+
+
+
+</div>

@@ -1,0 +1,22 @@
+{% extends 'template-base.html' %}
+    {% block content %}
+        {% load crispy_forms_tags %}
+        <div class="container-fluid">
+            {% if form.errors %}
+                <div class="alert alert-info">
+                    {{ form.errors }}
+                </div>
+            {% endif %}
+
+            <h1 class="mt-4"></h1>
+            <ol class="breadcrumb mb-4">
+                <li class="breadcrumb-item active">Delete</li>
+            </ol>
+
+            <form method="post">{% csrf_token %}
+                <p>Are you sure you want to delete {{ context_info.asset_type }} Asset {{ object }}?</p>
+                <input type="submit" value="Confirm" class="btn btn-danger">
+            </form>
+
+        </div>
+    {% endblock %}

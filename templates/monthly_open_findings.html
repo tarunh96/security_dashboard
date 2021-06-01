@@ -1,0 +1,214 @@
+
+<script type="application/javascript">
+
+    $(function() {
+        /**
+         *  This function will return a stacked bar chart by severities
+         * */
+
+        var severity_colors = {
+            'CRITICAL': "rgba(0,0,0,0.50)",
+            'HIGH': "rgba(253,54,54,0.30)",
+            'MEDIUM': "rgba(17,140,128,0.50)",
+            'LOW': "rgba(171,218,0,0.50)"
+        }
+        var MAX_LOOP_ITER = 100
+        var DEFAULT_SEVERITY_COLOR = "#292e34"
+        // when the user presses the button update
+        $('#{{ prefix }}_{{ chart_title }}_update').click(function () {
+
+            // define the arrays for the chart: labels and values
+
+            // get the status list from the user input.
+            var statusList = $("#{{ prefix }}_{{ chart_title }}_statusList").val()
+
+
+            // get the severity list from the user input. Loop over all checkboxes.
+            var severityList = $("#{{ prefix }}_{{ chart_title }}_severityList").val()
+            //console.log(severityList)
+            // parse the dates from the user input
+            var fromDateInput = $("#{{ prefix }}_{{ chart_title }}_from").val();
+            var toDateInput = $("#{{ prefix }}_{{ chart_title }}_to").val();
+
+            // dates from the input parsed
+            var current_date = new Date(fromDateInput)
+            current_date.setDate(1)
+            var last_date = new Date(toDateInput)
+
+            // dates from the input removing day (actual chart labels)
+            var current_date_label = current_date.getFullYear() + "-" + (current_date.getMonth()+1)
+            var last_date_label = last_date.getFullYear() + "-" + (last_date.getMonth()+1)
+
+            var chart_labels = [] // array of chart labels
+
+            var counter = 0 // limit the while loop
+            // if both dates are valid
+            if ((typeof(current_date) !== "undefined") && ((typeof(last_date) !== "undefined"))){
+                // while we have not reached the last date selected by the user
+                while (current_date_label != last_date_label){
+                    counter++
+                    if (counter > MAX_LOOP_ITER){
+                        break
+                    }
+                    chart_labels.push(current_date_label)
+                    current_date.setMonth(current_date.getMonth() + 1);
+                    current_date_label = current_date.getFullYear() + "-" + (current_date.getMonth()+1)
+                }
+                // add the last date
+                chart_labels.push(last_date_label)
+            }
+
+            var chart_data = {}
+            // make query to our API AllFindingsHistory
+            $.getJSON(
+
+                "{% url 'findings-history-api' context_info.to_organisation_url %}",
+                {
+                    "status": statusList.toString(),
+                    "severity": severityList.toString(),
+                    "finding_typeList": "{{ finding_typeList }}"
+
+                },
+                function (json_data) {
+
+                    // json_data will store the result
+                    // all findings arr is the json data passed to an array
+
+                    // loop over all dates retrieved
+                    $.each(json_data['finding_list'], function(date_key, date_list) {
+
+                        var history_month = new Date(date_key)
+
+                        // this is the column where this finding wil sum YYYY-mm
+                        var column_key = history_month.getFullYear() + "-" + (parseInt(history_month.getMonth())+1)
+
+                        var column_index = chart_labels.indexOf(column_key)
+
+                        // loop over all finding types inside that history_date
+                        $.each(date_list, function (finding_type_key, finding_type_list) {
+
+                            // loop over all findings inside this finding_type
+                            $.each(finding_type_list, function () {
+
+                                // we are looking for open findings
+                                if (this['status_name'] != "CLOSED"){
+                                    //console.log(this['status_name'])
+                                    var finding_severity = this['severity_name']
+                                    var this_severity_color = ""
+                                    if (finding_severity in severity_colors){
+                                        this_severity_color = severity_colors[finding_severity]
+                                    }
+                                    else{
+                                        this_severity_color = DEFAULT_SEVERITY_COLOR
+                                    }
+                                    // check if this tag in our chart_data
+                                    if (!(finding_severity in chart_data)) {
+                                        // if not, create object to store this severity's data
+
+                                        chart_data[finding_severity] = {
+                                            'label': finding_severity,
+                                            'fill': true,
+                                            'data': Array(chart_labels.length).fill(0), // initialize with chart_labels size
+                                            'borderColor': this_severity_color,
+                                            'backgroundColor': this_severity_color,
+                                            'pointBackgroundColor': this_severity_color,
+                                            'pointBorderColor': this_severity_color,
+                                            'pointHoverBackgroundColor': this_severity_color,
+                                            'pointHoverBorderColor': this_severity_color,
+
+                                        }
+                                    }
+
+                                    // check if the data array is big enough
+                                    //if (column_index >= chart_data[finding_severity]['data'].length) {
+
+
+                                    // the array needs to be expanded
+                                    //while (chart_data[finding_severity]['data'].length <= column_index) {
+                                      //  chart_data[finding_severity]['data'].push(0)
+                                    //}
+                                    //}
+                                    // we can write
+                                    chart_data[finding_severity]['data'][column_index]++
+                                }
+                            })
+                        })
+                    })
+                }).done(function () { // once we finish the jquery function.
+                        // Remember that it is async so we have to make sure we process the information after
+                        var all_findings_by_severity_arr = []
+                        $.each(chart_data, function(finding_severity_index, severity_finding_list){
+                            all_findings_by_severity_arr.push(severity_finding_list)
+                        })
+
+                        all_findings_by_severity_arr.reverse(function(first, second) {
+                            var first_sum = 0
+                            first['data'].forEach(function(num){first_sum+=parseFloat(num) || 0;});
+
+                            var second_sum = 0
+                            second['data'].forEach(function(num){second_sum+=parseFloat(num) || 0;});
+                            //return first_sum - second_sum;
+                            return second_sum - first_sum;
+                        });
+
+                        //console.log(all_findings_by_severity_arr)
+
+                        // there were some troubles with the charts overlapping after each update
+                        // remove any existing chart inside the div
+                        //$("#{{ prefix }}_{{ chart_title }}").remove();
+                        $("#{{ prefix }}_{{ chart_title }}_lineChartCanvas").html("")
+                        // add it again
+                        $("#{{ prefix }}_{{ chart_title }}_lineChartCanvas").append("<canvas id=\"{{ prefix }}_{{ chart_title }}\" width=\"800\" height=\"400\"></canvas><br>");
+
+                        // put the chart in the canvas
+                        var ctx = document.getElementById('{{ prefix }}_{{ chart_title }}').getContext('2d');
+
+                        var myChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                              labels: chart_labels,
+                              datasets: all_findings_by_severity_arr
+                            },
+
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: true,
+                                title: {
+                                    display: true,
+                                    text: "{{ chart_title }}: Summary of open vulnerabilities by month"
+                                },
+                                animation: {
+                                    duration: 300,
+                                },
+                                scales: {
+                                    xAxes: [{
+                                        stacked: true
+                                    }],
+                                    yAxes: [{
+                                        ticks: {
+                                            beginAtZero: true
+                                        }
+                                    }]
+                                },
+                                /*tooltips: {
+
+                                    callbacks: {
+                                        label: function (tooltipItem, data) {
+
+                                            return JSON.stringify(data['datasets'][0]['data'][tooltipItem['index']], null, 2)
+
+                                        }
+                                    }
+                                }*/
+                            }
+                        })
+
+                }
+            )
+        })
+    })
+</script>
+
+{% with boolean_last_day_of_month="Yes" %}
+    {% include 'chart-options.html' %}
+{% endwith %}

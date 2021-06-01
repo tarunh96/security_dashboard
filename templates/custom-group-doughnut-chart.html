@@ -1,0 +1,76 @@
+
+<script type="application/javascript">
+    $(document).ready(function(){
+
+        var label_array = [];
+        var data_array = [];
+        var backgroundColorsMap = {
+            "CLOSED": "#67ff56",
+            "WIP": "#fd852f",
+            "PLANNED": "#fdb14e",
+            "NOT_PLANNED": "#ff3f3e",
+            "CRITICAL": "#000000",
+            "HIGH": "#ff3f3e",
+            "MEDIUM": "#46aadd",
+            "LOW": "#118c80",
+
+        }
+        var background_colors = [];
+        {% for group in group_list %}
+            label_array.push("{{ group.grouper }}");
+
+            data_array.push("{{ group.list|length }}");
+            background_colors.push(backgroundColorsMap["{{ group.grouper }}"])
+        {% endfor %}
+
+
+
+        //$("#{{ prefix }}_{{ chart_title }}").remove();
+        // add it again
+        //$("#{{ prefix }}_{{ chart_title }}_pieChartCanvas").append("<canvas id=\"{{ prefix }}_{{ chart_title }}\" width=\"800\" height=\"300\"></canvas><br>");
+
+        var ctx = document.getElementById('{{ prefix }}_{{ chart_title }}');
+
+        var myChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels: label_array,
+              datasets: [{
+                label: "{{ context_info.finding_type }} Summary",
+                backgroundColor: background_colors.slice(0, label_array.length),
+                data: data_array
+              }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                title: {
+                    display: true,
+                    text: "Vulnerabilities by {{ chart_title }} Summary"
+                },
+                animation: {
+                        duration: 300,
+                 },
+                onHover: function (evt, elements) {
+                    if (elements && elements.length) {
+                        segment = elements[0];
+                        this.chart.update();
+                        selectedIndex = segment["_index"];
+                        segment._model.outerRadius += 5;
+                    } else {
+                        if (segment) {
+                            segment._model.outerRadius -= 5;
+                        }
+                        segment = null;
+                    }
+                },
+                layout: {
+                    padding: 10
+                }
+            }
+        });
+    })
+</script>
+<div id="{{ prefix }}_{{ chart_title }}_pieChartCanvas" style="height: 300px">
+    <canvas id="{{ prefix }}_{{ chart_title }}" height="300"></canvas>
+</div>

@@ -1,0 +1,16 @@
+{% extends 'form-base.html' %}
+{% block form_content %}
+    {% load crispy_forms_tags %}
+    <div class="container-fluid">
+        <h1 class="mt-4"></h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item active">Create a new {{ context_info.finding_type }} Finding</li>
+        </ol>
+
+        <form method="post">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <input type="submit" name='save' value="Save" class="btn btn-success">
+        </form>
+    </div>
+{% endblock %}

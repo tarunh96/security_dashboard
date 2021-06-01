@@ -1,0 +1,70 @@
+{% extends 'template-base.html' %}
+
+{% block content %}
+{% load order_by_tag %}
+
+    <div class="container-fluid">
+        <h1 class="mt-4">Findings List</h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item active">{{ context_info.asset_type }}-{{ context_info.asset_id }} Findings List</li>
+        </ol>
+
+        <ul id="finding_type_tabs" class="body-tabs body-tabs-layout tabs-animated body-tabs-animated nav">
+        {% for finding_type_key, finding_type_object in object_list.items %}
+            <li class="nav-item">
+                {% if forloop.first %}
+                    <a role="tab" class="nav-link active" id="tab-{{ forloop.counter0 }}" data-toggle="tab" href="#tab-content-{{ forloop.counter0 }}">
+                        <span>{{ finding_type_key }}</span>
+                    </a>
+                {% else %}
+                    <a role="tab" class="nav-link" id="tab-{{ forloop.counter0 }}" data-toggle="tab" href="#tab-content-{{ forloop.counter0 }}">
+                        <span>{{ finding_type_key }}</span>
+                    </a>
+                {% endif %}
+            </li>
+        {% endfor %}
+        </ul>
+        <!-- for each tab -->
+        <div class="tab-content">
+            {% for finding_single_type_list_key, finding_single_type_object in object_list.items %}
+
+                {% if forloop.first %}
+                    <div class="tab-pane tabs-animation fade show active" id="tab-content-{{ forloop.counter0 }}" role="tabpanel">
+                {% else %}
+                    <div class="tab-pane tabs-animation fade show" id="tab-content-{{ forloop.counter0 }}" role="tabpanel">
+                {% endif %}
+
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <i class="fas fa-table mr-1"></i>
+                                Findings {{ finding_single_type_list_key }} - Total: {{ finding_single_type_object.count }}
+                            </div>
+                            <div class="card-body">
+                                <div class="row" >
+                                    <div class="col-md-6">
+                                        {% regroup finding_single_type_object.all|order_by:"status" by status as finding_grouped_list %}
+                                        {% with group_list=finding_grouped_list chart_title="Status" prefix=finding_single_type_list_key %}
+                                            {% include 'custom-group-pie-chart.html' %}
+                                        {% endwith %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {% regroup finding_single_type_object.all|order_by:"severity" by severity as finding_grouped_list %}
+                                        {% with group_list=finding_grouped_list chart_title="Severity" prefix=finding_single_type_list_key %}
+                                            {% include 'custom-group-doughnut-chart.html' %}
+                                        {% endwith %}
+                                    </div>
+                                </div>
+                                <div style="margin-bottom: 40px">
+
+                                </div>
+                                {% with finding_list=finding_single_type_object finding_type=finding_single_type_list_key %}
+                                    {% include 'finding-list-datatable.html' %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </div>
+            {% endfor %}
+            </div>
+    </div>
+
+{% endblock %}

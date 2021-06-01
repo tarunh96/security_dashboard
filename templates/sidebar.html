@@ -1,0 +1,91 @@
+
+<div id="layoutSidenav">
+    <div id="layoutSidenav_nav">
+        <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+            <div class="sb-sidenav-menu">
+                <div class="nav">
+                    <div class="sb-sidenav-menu-heading">Core</div>
+                    <a class="nav-link" href="{% url 'home' context_info.to_organisation_url %}">
+                        <div class="sb-nav-link-icon">
+                            <i class="fas fa-tachometer-alt"></i>
+                        </div>
+                        Dashboard
+                    </a>
+                    <div class="sb-sidenav-menu-heading">Detail</div>
+                    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseFindings" aria-expanded="false" aria-controls="collapseLayouts">
+                        <div class="sb-nav-link-icon">
+                            <i class="fas fa-book-open"></i>
+                        </div>
+                        Findings
+                        <div class="sb-sidenav-collapse-arrow">
+                            <i class="fas fa-angle-down"></i>
+                        </div>
+                    </a>
+                    <div class="collapse" id="collapseFindings" aria-labelledby="headingFindings" data-parent="#sidenavAccordion">
+                        <nav class="sb-sidenav-menu-nested nav">
+
+                            {% for finding_type_object in context_info.finding_type_list %}
+                                <a class="nav-link collapsed" href="{% url 'finding-list' context_info.to_organisation_url finding_type_object.name %}" data-toggle="collapse" data-target="#collapseFindingType{{ finding_type_object.name }}" aria-expanded="false" aria-controls="collapseFindingType{{ finding_type_object.name }}">
+                                    <div class="sb-nav-link-icon">
+                                        <i class="fas fa-book-open"></i>
+                                    </div>
+                                    {{ finding_type_object.name }}
+                                    <div class="sb-sidenav-collapse-arrow">
+                                        <i class="fas fa-angle-down"></i>
+                                    </div>
+                                </a>
+                                <div class="collapse" id="collapseFindingType{{ finding_type_object.name }}" aria-labelledby="collapseFindingType{{ finding_type_object.name }}" data-parent="#collapseFindings">
+                                    <nav class="sb-sidenav-menu-nested nav accordion" id="sidenavAccordionPages">
+
+                                        <a class="nav-link" href="{% url 'finding-list' context_info.to_organisation_url finding_type_object.name %}">{{ finding_type_object.name }} List</a>
+                                        <a class="nav-link" href="{% url 'finding-create' context_info.to_organisation_url finding_type_object.name %}">Manual Create</a>
+                                        <a class="nav-link" href="{% url 'csv-upload' context_info.to_organisation_url finding_type_object.name %}">Upload CSV</a>
+
+                                    </nav>
+                                </div>
+
+                            {% endfor %}
+
+                        </nav>
+                    </div>
+                    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseAssets" aria-expanded="false" aria-controls="collapseLayouts">
+                        <div class="sb-nav-link-icon">
+                            <i class="fas fa-book-open"></i>
+                        </div>
+                        Assets
+                        <div class="sb-sidenav-collapse-arrow">
+                            <i class="fas fa-angle-down"></i>
+                        </div>
+                    </a>
+
+                    <div class="collapse" id="collapseAssets" aria-labelledby="headingAssets" data-parent="#sidenavAccordion">
+                        <nav class="sb-sidenav-menu-nested nav">
+
+                            {% for asset_type_object in context_info.asset_type_list %}
+                                <a class="nav-link collapsed" href="{% url 'asset-list' context_info.to_organisation_url asset_type_object.name %}" data-toggle="collapse" data-target="#collapseAssetType{{ asset_type_object.name }}" aria-expanded="false" aria-controls="collapseAssetType{{ asset_type_object.name }}">
+                                    <div class="sb-nav-link-icon">
+                                        <i class="fas fa-book-open"></i>
+                                    </div>
+                                    {{ asset_type_object.name }}
+                                    <div class="sb-sidenav-collapse-arrow">
+                                        <i class="fas fa-angle-down"></i>
+                                    </div>
+                                </a>
+                                <div class="collapse" id="collapseAssetType{{ asset_type_object.name }}" aria-labelledby="collapseAssetType{{ asset_type_object.name }}" data-parent="#collapseAssets">
+                                    <nav class="sb-sidenav-menu-nested nav accordion" id="sidenavAccordionPages">
+
+                                        <a class="nav-link" href="{% url 'asset-list' context_info.to_organisation_url asset_type_object.name %}">{{ asset_type_object.name }} List</a>
+                                        <a class="nav-link" href="{% url 'asset-create' context_info.to_organisation_url asset_type_object.name %}">Manual Create</a>
+                                        <a class="nav-link" href="{% url 'csv-upload' context_info.to_organisation_url asset_type_object.name %}">Upload CSV</a>
+
+                                    </nav>
+                                </div>
+
+                            {% endfor %}
+
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </div>
